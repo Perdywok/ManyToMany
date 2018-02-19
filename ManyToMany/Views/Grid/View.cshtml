@@ -1,0 +1,8 @@
+﻿@model IEnumerable<ManyToMany.Models.ViewModel>
+
+@(
+                Html.Kendo().MultiSelectFor(m => m)
+                    .DataTextField("AuthorName")
+                    .DataValueField("AuthorId")
+                    .BindTo((IEnumerable<ManyToMany.Models.ViewModel>)ViewData["authors"])
+)

@@ -1,28 +1,85 @@
-﻿
-@(Html.Kendo().Grid<ManyToMany.Models.Book>()
-      .Name("grid")
-      .Columns(columns =>
-      {
-        columns.Bound(c => c.BookName);
-        columns.Bound(c => c.Pages);
-        columns.Bound(c => c.Publisher);
-        columns.Bound(c => c.Genre);
-        columns.Command(command => {command.Destroy(); }).Width(180);
-      })
-      .ToolBar(toolbar => {
-            toolbar.Create();
-            toolbar.Save();
-      })
-      .Editable(editable => editable.Mode(GridEditMode.InCell))
-      .Pageable()
-      .Scrollable()
-      .DataSource(dataSource => dataSource
-          .Ajax()
-          .Batch(true)
-          .Model(model => model.Id(p => p.BookId))
-          .Read(read => read.Action("Books_Read", "Grid"))
-          .Create(create => create.Action("Books_Create", "Grid"))
-          .Update(update => update.Action("Books_Update", "Grid"))
-          .Destroy(destroy => destroy.Action("Books_Destroy", "Grid"))
-      )
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+@(Html.Kendo().Grid<ManyToMany.Models.ViewModel>()
+                .Name("grid")
+                .Columns(columns =>
+                {
+                    columns.Bound(e => e.BookId).Visible(false);
+                    columns.Bound(e => e.Pages);
+                    columns.Bound(e => e.Genre);
+                    columns.Bound(e => e.Publisher);
+                    columns.Bound(e => e.Authors).ClientTemplate(
+
+                         Html.Kendo().MultiSelect().Name("multi#=BookId#")
+                            .DataTextField("AuthorName")
+                            .DataValueField("AuthorId")
+                            .BindTo((IEnumerable<ManyToMany.Models.Author>)ViewData["authors"]) /*TaskSecond.Models.ViewModel*/
+                            .Events(e => e.Change("change"))
+                            .ToClientTemplate().ToHtmlString()
+                        );
+                    columns.Command(command => command.Destroy()).Width(150);
+
+                })
+                .ToolBar(toolbar =>
+                {
+                    toolbar.Create();
+                    toolbar.Save();
+                })
+                .Editable(editable => editable.Mode(GridEditMode.InCell))
+                                                    .Pageable()
+                                                    .Filterable()
+                .Events(e => e.DataBound("dataBound"))
+                .DataSource(dataSource => dataSource
+                    .Ajax()
+                    .Batch(true)
+                .Model(model =>
+                {
+                    model.Id(p => p.BookId);
+                    model.Field(p => p.Pages).DefaultValue(0);
+                    model.Field(p => p.Genre).DefaultValue(0);
+                    model.Field(p => p.Publisher).DefaultValue("");
+                    model.Field(p => p.Authors).DefaultValue(
+                        ViewData["defaultAuthors"] as ManyToMany.Models.Author);
+                })
+                    .PageSize(5)
+                     .Read(read => read.Action("Books_Read", "Grid"))
+        .Create(create => create.Action("Books_Create", "Grid"))
+         .Update(update => update.Action("Books_Update", "Grid"))
+        .Destroy(destroy => destroy.Action("Books_Destroy", "Grid"))
+                    .ServerOperation(false))
 )
+
+<script type="text/javascript">
+    function dataBound(e) {
+        var grid = this;
+        grid.tbody.children().each(function () {
+            var dataitem = grid.dataItem(this),
+                row = $(this);
+            eval(row.find("script").html());
+            //var multiSelect = $("#multiselect").data("kendoMultiSelect");
+            var multiSelect = $(this).find("select").data("kendoMultiSelect");
+            multiSelect.value(dataitem.Authors.map(function (i) { return i.AuthorId }));
+        });
+    }
+
+    function change(e) {
+        var row = this.element.closest("tr"),
+            model = $("#grid").data("kendoGrid").dataItem(row);
+        model.set("Authors", this.dataItems());
+    }
+    function error_handler(e) {
+        if (e.errors) {
+            var message = "Errors:\n";
+            $.each(e.errors, function (key, value) {
+                if ('errors' in value) {
+                    $.each(value.errors, function () {
+                        message += this + "\n";
+                    });
+                }
+            });
+            alert(message);
+        }
+    }
+</script>

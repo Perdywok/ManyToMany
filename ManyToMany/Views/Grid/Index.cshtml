@@ -1,0 +1,28 @@
+﻿
+@(Html.Kendo().Grid<ManyToMany.Models.Book>()
+      .Name("grid")
+      .Columns(columns =>
+      {
+        columns.Bound(c => c.BookName);
+        columns.Bound(c => c.Pages);
+        columns.Bound(c => c.Publisher);
+        columns.Bound(c => c.Genre);
+        columns.Command(command => {command.Destroy(); }).Width(180);
+      })
+      .ToolBar(toolbar => {
+            toolbar.Create();
+            toolbar.Save();
+      })
+      .Editable(editable => editable.Mode(GridEditMode.InCell))
+      .Pageable()
+      .Scrollable()
+      .DataSource(dataSource => dataSource
+          .Ajax()
+          .Batch(true)
+          .Model(model => model.Id(p => p.BookId))
+          .Read(read => read.Action("Books_Read", "Grid"))
+          .Create(create => create.Action("Books_Create", "Grid"))
+          .Update(update => update.Action("Books_Update", "Grid"))
+          .Destroy(destroy => destroy.Action("Books_Destroy", "Grid"))
+      )
+)
